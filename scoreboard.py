@@ -32,8 +32,11 @@ class ScoreEntry(BaseModel):
     playerName: str
     time: float
 
-# Load the data from the JSON file into a DataFrame
-df = pd.read_json('scoreboard.json')
+# Load the scoreboard from JSON
+df = pd.read_json('scoreboard.json', orient='records')
+
+# Ensure the 'time' column is of type float
+df['time'] = df['time'].astype(float)
 
 
 
@@ -76,5 +79,3 @@ async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
     # Save the updated DataFrame to JSON
     df.to_json('scoreboard.json', orient='records')
     return {'status': 'success'}
-    
-    
