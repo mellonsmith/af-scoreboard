@@ -13,8 +13,6 @@ load_dotenv()
 
 app = FastAPI()
 
-
-
 # Use environment variables
 allow_origins = os.getenv('ALLOW_ORIGINS', '*').split(',')
 expected_api_key = os.getenv('API_KEY', 'secret')
@@ -38,8 +36,6 @@ df = pd.read_json('scoreboard.json', orient='records')
 # Ensure the 'time' column is of type float
 df['time'] = df['time'].astype(float)
 
-
-
 async def get_api_key(x_api_key: str = Header(...)):
     global expected_api_key
     if x_api_key != expected_api_key:
@@ -52,9 +48,11 @@ async def get_api_key(x_api_key: str = Header(...)):
 @app.get("/scoreboard/{level}")
 def scoreboard_list(level: int):
     # return sorted by time
-    return df[df['level'] == level].sort_values(by='time').to_dict(orient='records')
-    
-
+    result = df[df['level'] == level].sort_values(by='time').to_dict(orient='records')
+    # Ensure time is formatted as float
+    for entry in result:
+        entry['time'] = float(entry['time'])
+    return result
 
 @app.post("/scoreboard/submit")
 async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
