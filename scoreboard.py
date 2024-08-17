@@ -27,6 +27,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class ScoreEntry(BaseModel):
+    level: int
+    playerName: str
+    time: float
+
 # Load the data from the JSON file into a DataFrame
 df = pd.read_json('scoreboard.json')
 
@@ -49,7 +54,7 @@ def scoreboard_list(level: int):
 
 
 @app.post("/scoreboard/submit")
-async def submit_json(data: dict, api_key: str = Depends(get_api_key)):
+async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
     if 'level' not in data:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
