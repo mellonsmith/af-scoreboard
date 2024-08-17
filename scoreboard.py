@@ -55,47 +55,26 @@ def scoreboard_list(level: int):
 
 @app.post("/scoreboard/submit")
 async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
-    if 'level' not in data:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Level not found in request data"
-        )
-    if 'playerName' not in data:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Name not found in request data"
-        )
-    if 'time' not in data:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Timestamp not found in request data"
-        )
-    if 'level' in data and 'playerName' in data and 'time' in data:
-        # Check if there is an existing entry for the given level and playerName
-        existing_entry_index = df[(df['level'] == data['level']) & (df['playerName'] == data['playerName'])].index
+    # Check if there is an existing entry for the given level and playerName
+    existing_entry_index = df[(df['level'] == data.level) & (df['playerName'] == data.playerName)].index
 
-        if not existing_entry_index.empty:
-            # Get the existing time for comparison
-            existing_time = df.at[existing_entry_index[0], 'time']
-            # Update the time for the existing entry only if the new time is better
-            if data['time'] < existing_time:
-                df.at[existing_entry_index[0], 'time'] = data['time']
-            else :
-                raise HTTPException(
-                    status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-                    detail="New time is not better than existing time"
-                )
+    if not existing_entry_index.empty:
+        # Get the existing time for comparison
+        existing_time = df.at[existing_entry_index[0], 'time']
+        # Update the time for the existing entry only if the new time is better
+        if data.time < existing_time:
+            df.at[existing_entry_index[0], 'time'] = data.time
         else:
-            # Add a new entry
-            df.loc[len(df.index)] = [data['level'], data['playerName'], data['time']]
-
-        # Save the updated DataFrame to JSON
-        df.to_json('scoreboard.json', orient='records')
-        return {'status': 'success'}
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="New time is not better than existing time"
+            )
     else:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Invalid request data"
-        )
+        # Add a new entry
+        df.loc[len(df.index)] = [data.level, data.playerName, data.time]
+
+    # Save the updated DataFrame to JSON
+    df.to_json('scoreboard.json', orient='records')
+    return {'status': 'success'}
     
     
