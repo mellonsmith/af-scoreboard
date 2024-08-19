@@ -54,10 +54,24 @@ def scoreboard_list(level: int):
         entry['time'] = float(entry['time'])
     return result
 
+@app.get("/score/{level}/{playerName}")
+def get_score(level: int, playerName: str):
+    # Re the time and the scoreboard position for the given level and playerName
+    entry = df[(df['level'] == level) & (df['playerName'] == playerName)]
+    if entry.empty:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Entry not found"
+        )
+    return {
+        'time': float(entry['time']),
+        'position': entry.index[0]
+    }
+
 @app.post("/scoreboard/submit")
 async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
     # Check if there is an existing entry for the given level and playerName
-    existing_entry_index = df[(df['level'] == data.level) & (df['playerName'] == data.playerName)].index
+    existing_entry_index = df[(df['level'] == data.level) & (df['playerName'].str.lower() == data.playerName.lower())].index
 
     if not existing_entry_index.empty:
         # Get the existing time for comparison
@@ -72,7 +86,7 @@ async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
             )
     else:
         # Add a new entry
-        df.loc[len(df.index)] = [data.level, data.playerName, data.time]
+        df.loc[len(df.index)] = [data.level, data.playerName.lower(), data.time]
 
     # Save the updated DataFrame to JSON
     df.to_json('scoreboard.json', orient='records')
