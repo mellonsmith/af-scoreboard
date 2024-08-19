@@ -7,9 +7,17 @@ import json
 import secrets
 from dotenv import load_dotenv
 import os
+import logging
 
 # Load environment variables
 load_dotenv()
+
+# Configure logging
+logging.basicConfig(
+    filename='scoreboard.log',
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
 
 app = FastAPI()
 
@@ -79,6 +87,7 @@ async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
         # Update the time for the existing entry only if the new time is better
         if data.time < existing_time:
             df.at[existing_entry_index[0], 'time'] = data.time
+            logging.info(f"Better high score: Level {data.level}, Player {data.playerName.lower()}, Time {data.time}")
         else:
             raise HTTPException(
                 status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
@@ -87,6 +96,8 @@ async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
     else:
         # Add a new entry
         df.loc[len(df.index)] = [data.level, data.playerName.lower(), data.time]
+        logging.info(f"New entry: Level {data.level}, Player {data.playerName.lower()}, Time {data.time}")
+
 
     # Save the updated DataFrame to JSON
     df.to_json('scoreboard.json', orient='records')
