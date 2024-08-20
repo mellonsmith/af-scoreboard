@@ -21,13 +21,13 @@ logging.basicConfig(
 
 app = FastAPI()
 
-# Use environment variables
+# .env
 allow_origins = os.getenv('ALLOW_ORIGINS', '*').split(',')
 expected_api_key = os.getenv('API_KEY', 'secret')
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allow_origins,  # Use environment variable
+    allow_origins=allow_origins,  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -64,7 +64,6 @@ def scoreboard_list(level: int):
 
 @app.get("/score/{level}/{playerName}")
 def get_score(level: int, playerName: str):
-    # Re the time and the scoreboard position for the given level and playerName
     entry = df[(df['level'] == level) & (df['playerName'] == playerName)]
     if entry.empty:
         raise HTTPException(
@@ -84,7 +83,6 @@ async def submit_json(data: ScoreEntry, api_key: str = Depends(get_api_key)):
     if not existing_entry_index.empty:
         # Get the existing time for comparison
         existing_time = df.at[existing_entry_index[0], 'time']
-        # Update the time for the existing entry only if the new time is better
         if data.time < existing_time:
             df.at[existing_entry_index[0], 'time'] = data.time
             logging.info(f"Better high score: Level {data.level}, Player {data.playerName.lower()}, Time {data.time}")
